@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="5161872c-c0b4-4812-9bec-2392eeca6892" >
-		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" />
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="craftsoft"/>
 	</db:config>
 	<flow name="muledatabaseprojectFlow" doc:id="39db3a48-989f-4a1e-a8ab-2484a9799996" >
 		<http:listener doc:name="Listener" doc:id="d29101b5-817a-4e30-8770-11edc163da82" config-ref="HTTP_Listener_config" path="/ddl"/>
@@ -52,6 +52,31 @@ output application/json
 			</ee:message>
 		</ee:transform>
 	</flow>
+	<flow name="muledatabaseprojectFlow6" doc:id="c21b0220-1c01-4a1c-a5ed-a507ec22d465" >
+		<http:listener doc:name="Listener" doc:id="ffae37c7-8354-47f3-b6de-7359853468b4" config-ref="HTTP_Listener_config" path="/bulkinsert"/>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="8c089a73-6a15-46ed-872c-0fc9c9f13e41" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[payload map(value, index ) -> 
+{
+	personID: value.personID,
+	LastName: value.LastName,
+	FirstName: value.FirstName,
+	Address: value.Address,
+	City: value.City,
+	Email: value.Email
+}]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[insert into craftsoft.persons (personID, LastName, FirstName, Address, City, Email) values (:personID, :LastName, :FirstName, :Address, :City, :Email)]]></db:sql>
+		</db:bulk-insert>
+		<ee:transform doc:name="Transform Message" doc:id="6a98d93e-fe86-4c70-97f1-379953052c9e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Successfully Inserted"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 	<flow name="muledatabaseprojectFlow2" doc:id="535b6f62-ddf7-46ce-b103-f20570b44a00" >
 		<http:listener doc:name="Listener" doc:id="32f9e72d-ffae-4c56-9571-1f620d600784" config-ref="HTTP_Listener_config" path="/update"/>
 		<db:update doc:name="Update" doc:id="ed523be0-02d9-4612-9573-66f5a8aca062" config-ref="Database_Config">
@@ -62,6 +87,26 @@ output application/json
 }]]]></db:input-parameters>
 		</db:update>
 		<ee:transform doc:name="Transform Message" doc:id="a9576ee9-cb4f-4300-a61f-9ae4f94b5d73" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Successfully Updated"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="muledatabaseprojectFlow7" doc:id="ced82253-0ee4-4c3b-a8af-315a220684e6" >
+		<http:listener doc:name="Listener" doc:id="c27590cb-3b9e-4886-9cb5-a15e7e9b302f" config-ref="HTTP_Listener_config" path="/bulkupdate"/>
+		<db:bulk-update doc:name="Bulk update" doc:id="0b708b37-9b5e-43eb-a5c9-5fc32a1814cc" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[payload map(value, index) -> {
+	city: value.city,
+	PersonID: value.PersonID
+}]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[Update craftsoft.persons set city=:city where PersonID=:PersonID;]]></db:sql>
+		</db:bulk-update>
+		<ee:transform doc:name="Transform Message" doc:id="6a4a6bb4-8678-4d91-88ce-951f42304b2b" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -91,10 +136,29 @@ output application/json
 			</ee:message>
 		</ee:transform>
 	</flow>
+	<flow name="muledatabaseprojectFlow8" doc:id="14717e82-7257-4ce4-a81b-0f6c8cb419f8" >
+		<http:listener doc:name="Listener" doc:id="8a4d3f1c-35a3-43c5-a456-baaf24d76300" config-ref="HTTP_Listener_config" path="/bulkdelete"/>
+		<db:bulk-delete doc:name="Bulk delete" doc:id="67160d83-0704-4df8-bc32-7fd8bc4794e7" config-ref="Database_Config">
+			<db:bulk-input-parameters ><![CDATA[#[payload map (value, index) -> {
+	id: value.id
+}]]]></db:bulk-input-parameters>
+			<db:sql ><![CDATA[delete from craftsoft.persons where PersonID=:id;]]></db:sql>
+		</db:bulk-delete>
+		<ee:transform doc:name="Transform Message" doc:id="8dbe2656-b9cc-4e4f-98ac-efb159b445bd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Successfully Deleted"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
 	<flow name="muledatabaseprojectFlow4" doc:id="445a5fbc-b275-478a-ba64-a53000b21ada" >
 		<http:listener doc:name="Listener" doc:id="58d2ae04-c12b-46dd-a655-71b617fcae37" config-ref="HTTP_Listener_config" path="/select"/>
 		<db:select doc:name="Select" doc:id="f40ca601-6620-4793-abc3-b70f7e1cd213" config-ref="Database_Config">
-			<db:sql ><![CDATA[SELECT * FROM craftsoft.persons;]]></db:sql>
+			<db:sql ><![CDATA[SELECT * FROM persons;]]></db:sql>
 		</db:select>
 		<ee:transform doc:name="Transform Message" doc:id="02362de7-ef19-498f-aca8-564af46d86c5" >
 			<ee:message >
@@ -118,5 +182,58 @@ output application/json
 payload]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+	</flow>
+	<flow name="muledatabaseprojectFlow9" doc:id="f4bff2ff-6fa5-443f-9346-3187aadd3feb" >
+		<http:listener doc:name="Listener" doc:id="567d8bd5-289e-4811-90f6-018a0681f73d" config-ref="HTTP_Listener_config" path="/stored"/>
+		<db:stored-procedure doc:name="Stored procedure" doc:id="d701c81e-a24f-4c73-af44-a4262842f59c" config-ref="Database_Config">
+			<db:sql ><![CDATA[call products_stored(:pname, :pdescription, :pprice, :pstock, :pcategory);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	pname: payload.pname,
+	pdescription: payload.pdescription,
+	pprice: payload.pprice,
+	pstock: payload.pstock,
+	pcategory: payload.pcategory
+	
+}]]]></db:input-parameters>
+		</db:stored-procedure>
+		<ee:transform doc:name="Transform Message" doc:id="36585fe7-64bb-4272-b2e0-2c354ba545ce" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="muledatabaseprojectFlow10" doc:id="81b3ac0d-75a4-4ab2-aee7-6e7aae253c68" >
+		<http:listener doc:name="Listener" doc:id="5d80c6a8-2630-44df-877d-d063b695dd0e" config-ref="HTTP_Listener_config" path="/execute"/>
+		<db:execute-script doc:name="Execute script" doc:id="b1eaf0fa-d1af-4730-af38-285c780e2a80" config-ref="Database_Config" file="C:\Users\craft\Music\Mule\amazonhrdatabase.sql">
+		</db:execute-script>
+		<ee:transform doc:name="Transform Message" doc:id="64f16f0a-4295-40d7-8eae-1df0ee07b0fb" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Successfully Executed"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="muledatabaseprojectFlow11" doc:id="9c636dcd-5963-42a8-9f80-968b7ec64321" >
+		<db:listener table="persons" doc:name="On Table Row" doc:id="b5af676a-86d0-41bd-b501-050fbe670aef" config-ref="Database_Config" watermarkColumn="PersonID" idColumn="PersonID">
+			<scheduling-strategy >
+				<fixed-frequency frequency="2" timeUnit="SECONDS" />
+			</scheduling-strategy>
+		</db:listener>
+		<ee:transform doc:name="Transform Message" doc:id="a19bdf0b-75b9-42ac-9ad7-ea1f3f351b36" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="763c2181-ffe2-48a8-9710-12a75f158b6d" message="#[payload]"/>
 	</flow>
 </mule>
